@@ -14,6 +14,8 @@ import {
   Gauge,
   Save,
   Download,
+  Trash2,
+  Droplet,
 } from "lucide-react";
 
 interface Malt {
@@ -35,6 +37,9 @@ interface Recipe {
   waterAmount: number;
   malts: Malt[];
   hops: Hop[];
+  yeastType: string;
+  fermentationTemp: number;
+  boilTime: number;
 }
 
 interface Step {
@@ -70,6 +75,9 @@ function App() {
       { type: "East Kent Goldings", amount: 30, boilTime: 60 },
       { type: "Fuggles", amount: 15, boilTime: 15 },
     ],
+    yeastType: "American Ale Yeast",
+    fermentationTemp: 20,
+    boilTime: 60,
   });
 
   const [editingRecipe, setEditingRecipe] = useState(false);
@@ -143,10 +151,12 @@ function App() {
         {
           title: "Water Measurements",
           content: [
-            "Total required: 27 liters",
-            "Initial amount: 22 liters",
-            "Note: Reduce total by 3 liters due to less evaporation",
-            "Reserve 5 liters for mashing",
+            `Total required: ${recipe.waterAmount} liters`,
+            `Initial amount: ${(recipe.waterAmount * 0.8).toFixed(1)} liters`,
+            "Note: Adjust based on recipe and system requirements",
+            `Reserve ${(recipe.waterAmount * 0.2).toFixed(
+              1
+            )} liters for sparging`,
           ],
         },
       ],
@@ -192,7 +202,11 @@ function App() {
       isExpanded: false,
       tasks: [
         { id: 1, text: "Reach temperature of 102°C", completed: false },
-        { id: 2, text: "Maintain boil for 60 minutes", completed: false },
+        {
+          id: 2,
+          text: `Maintain boil for ${recipe.boilTime} minutes`,
+          completed: false,
+        },
         {
           id: 3,
           text: "Add hops according to schedule below",
@@ -218,7 +232,11 @@ function App() {
         "https://images.unsplash.com/photo-1583743089695-4b816a340f82?auto=format&fit=crop&q=80&w=1000",
       isExpanded: false,
       tasks: [
-        { id: 1, text: "Cool to 20°C", completed: false },
+        {
+          id: 1,
+          text: `Cool to ${recipe.fermentationTemp}°C`,
+          completed: false,
+        },
         {
           id: 2,
           text: "Use external thermometer for accuracy",
@@ -240,7 +258,7 @@ function App() {
           text: "Clean fermentation bucket with Star-san",
           completed: false,
         },
-        { id: 2, text: "Add yeast", completed: false },
+        { id: 2, text: `Add ${recipe.yeastType}`, completed: false },
         { id: 3, text: "Mount airlock with Star-san", completed: false },
       ],
       info: [
@@ -251,11 +269,132 @@ function App() {
             "Monitor Star-san level in airlock",
             "Ensure airlock remains properly sealed",
             `Target Final Gravity: ${recipe.expectedFG}`,
+            `Maintain temperature at ${recipe.fermentationTemp}°C`,
           ],
         },
       ],
     },
   ]);
+
+  useEffect(() => {
+    const recipes = JSON.parse(localStorage.getItem("savedRecipes") || "[]");
+    setSavedRecipes(recipes);
+  }, []);
+
+  useEffect(() => {
+    // Update steps when recipe changes
+    setSteps((prevSteps) =>
+      prevSteps.map((step) => {
+        if (step.id === 3) {
+          return {
+            ...step,
+            info: [
+              {
+                title: "Water Measurements",
+                content: [
+                  `Total required: ${recipe.waterAmount} liters`,
+                  `Initial amount: ${(recipe.waterAmount * 0.8).toFixed(
+                    1
+                  )} liters`,
+                  "Note: Adjust based on recipe and system requirements",
+                  `Reserve ${(recipe.waterAmount * 0.2).toFixed(
+                    1
+                  )} liters for sparging`,
+                ],
+              },
+            ],
+          };
+        }
+        if (step.id === 4) {
+          return {
+            ...step,
+            info: [
+              {
+                title: "Mashing Details",
+                content: [
+                  `Target Temperature: ${recipe.mashTemp}°C`,
+                  "Pump every 20 minutes",
+                  "Turn off pump for 1 minute during each interval",
+                  `Expected Original Gravity: ${recipe.expectedOG}`,
+                ],
+              },
+            ],
+          };
+        }
+        if (step.id === 5) {
+          return {
+            ...step,
+            tasks: [
+              { id: 1, text: "Reach temperature of 102°C", completed: false },
+              {
+                id: 2,
+                text: `Maintain boil for ${recipe.boilTime} minutes`,
+                completed: false,
+              },
+              {
+                id: 3,
+                text: "Add hops according to schedule below",
+                completed: false,
+              },
+            ],
+            info: [
+              {
+                title: "Hop Schedule",
+                content: recipe.hops.map(
+                  (hop) =>
+                    `Add ${hop.amount}g of ${hop.type} at ${hop.boilTime} minutes remaining`
+                ),
+              },
+            ],
+          };
+        }
+        if (step.id === 6) {
+          return {
+            ...step,
+            tasks: [
+              {
+                id: 1,
+                text: `Cool to ${recipe.fermentationTemp}°C`,
+                completed: false,
+              },
+              {
+                id: 2,
+                text: "Use external thermometer for accuracy",
+                completed: false,
+              },
+            ],
+          };
+        }
+        if (step.id === 7) {
+          return {
+            ...step,
+            tasks: [
+              {
+                id: 1,
+                text: "Clean fermentation bucket with Star-san",
+                completed: false,
+              },
+              { id: 2, text: `Add ${recipe.yeastType}`, completed: false },
+              { id: 3, text: "Mount airlock with Star-san", completed: false },
+            ],
+            info: [
+              {
+                title: "Fermentation Details",
+                content: [
+                  "Check for bubbling after 7 days",
+                  "Monitor Star-san level in airlock",
+                  "Ensure airlock remains properly sealed",
+                  `Target Final Gravity: ${recipe.expectedFG}`,
+                  `Maintain temperature at ${recipe.fermentationTemp}°C`,
+                ],
+              },
+            ],
+          };
+        }
+        return step;
+      })
+    );
+  }, [recipe]);
 
   const toggleStep = (stepId: number) => {
     setSteps(
@@ -352,11 +491,6 @@ function App() {
       hops: recipe.hops.filter((_, i) => i !== index),
     });
   };
-
-  useEffect(() => {
-    const recipes = JSON.parse(localStorage.getItem("savedRecipes") || "[]");
-    setSavedRecipes(recipes);
-  }, []);
 
   const saveRecipe = () => {
     if (!savedRecipes.includes(recipe.name)) {
@@ -501,6 +635,54 @@ function App() {
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Yeast Type
+                  </label>
+                  <input
+                    type="text"
+                    value={recipe.yeastType}
+                    onChange={(e) =>
+                      setRecipe({
+                        ...recipe,
+                        yeastType: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fermentation Temperature (°C)
+                  </label>
+                  <input
+                    type="number"
+                    value={recipe.fermentationTemp}
+                    onChange={(e) =>
+                      setRecipe({
+                        ...recipe,
+                        fermentationTemp: Number(e.target.value),
+                      })
+                    }
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Boil Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    value={recipe.boilTime}
+                    onChange={(e) =>
+                      setRecipe({
+                        ...recipe,
+                        boilTime: Number(e.target.value),
+                      })
+                    }
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200"
+                  />
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -619,6 +801,16 @@ function App() {
                     </p>
                     <p className="text-amber-800">
                       <strong>Water Amount:</strong> {recipe.waterAmount}L
+                    </p>
+                    <p className="text-amber-800">
+                      <strong>Yeast Type:</strong> {recipe.yeastType}
+                    </p>
+                    <p className="text-amber-800">
+                      <strong>Fermentation Temp:</strong>{" "}
+                      {recipe.fermentationTemp}°C
+                    </p>
+                    <p className="text-amber-800">
+                      <strong>Boil Time:</strong> {recipe.boilTime} minutes
                     </p>
                   </div>
                 </div>
