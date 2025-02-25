@@ -1,22 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Beer,
+  FlaskConical,
+  Wheat,
+  Hop,
+  XCircle,
+  ChevronUp,
+  ChevronDown,
+  CheckCircle2,
   Sparkles,
   Thermometer,
   Timer,
-  CheckCircle2,
-  XCircle,
-  ChevronDown,
-  ChevronUp,
-  Droplets,
-  FlaskRound as Flask,
   Gauge,
-  Scale,
-  DollarSign,
-  Building2,
-  Package,
-  Wheat,
-  Hop,
+  Save,
+  Download,
 } from "lucide-react";
 
 interface Malt {
@@ -35,6 +32,7 @@ interface Recipe {
   mashTemp: number;
   expectedOG: number;
   expectedFG: number;
+  waterAmount: number;
   malts: Malt[];
   hops: Hop[];
 }
@@ -62,6 +60,7 @@ function App() {
     mashTemp: 67,
     expectedOG: 1.052,
     expectedFG: 1.012,
+    waterAmount: 20,
     malts: [
       { type: "Pale Ale Malt", amount: 4.5 },
       { type: "Munich Malt", amount: 1.0 },
@@ -74,6 +73,7 @@ function App() {
   });
 
   const [editingRecipe, setEditingRecipe] = useState(false);
+  const [savedRecipes, setSavedRecipes] = useState<string[]>([]);
 
   const [steps, setSteps] = useState<Step[]>([
     {
@@ -353,6 +353,34 @@ function App() {
     });
   };
 
+  useEffect(() => {
+    const recipes = JSON.parse(localStorage.getItem("savedRecipes") || "[]");
+    setSavedRecipes(recipes);
+  }, []);
+
+  const saveRecipe = () => {
+    if (!savedRecipes.includes(recipe.name)) {
+      const updatedRecipes = [...savedRecipes, recipe.name];
+      setSavedRecipes(updatedRecipes);
+      localStorage.setItem("savedRecipes", JSON.stringify(updatedRecipes));
+    }
+    localStorage.setItem(`recipe_${recipe.name}`, JSON.stringify(recipe));
+  };
+
+  const loadRecipe = (recipeName: string) => {
+    const loadedRecipe = JSON.parse(
+      localStorage.getItem(`recipe_${recipeName}`) || "{}"
+    );
+    setRecipe(loadedRecipe);
+  };
+
+  const deleteRecipe = (recipeName: string) => {
+    const updatedRecipes = savedRecipes.filter((name) => name !== recipeName);
+    setSavedRecipes(updatedRecipes);
+    localStorage.setItem("savedRecipes", JSON.stringify(updatedRecipes));
+    localStorage.removeItem(`recipe_${recipeName}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100">
       <div className="container mx-auto px-4 py-8">
@@ -373,15 +401,24 @@ function App() {
           <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white flex items-center">
-                <Flask className="w-6 h-6 mr-2" />
+                <FlaskConical className="w-6 h-6 mr-2" />
                 Recipe Configuration
               </h2>
-              <button
-                onClick={() => setEditingRecipe(!editingRecipe)}
-                className="px-4 py-2 bg-white text-amber-700 rounded-lg hover:bg-amber-50 transition-colors"
-              >
-                {editingRecipe ? "Save Recipe" : "Edit Recipe"}
-              </button>
+              <div className="space-x-2">
+                <button
+                  onClick={saveRecipe}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center shadow-md"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Recipe
+                </button>
+                <button
+                  onClick={() => setEditingRecipe(!editingRecipe)}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-md"
+                >
+                  {editingRecipe ? "Save Changes" : "Edit Recipe"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -443,6 +480,22 @@ function App() {
                       setRecipe({
                         ...recipe,
                         expectedFG: Number(e.target.value),
+                      })
+                    }
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Water Amount (L)
+                  </label>
+                  <input
+                    type="number"
+                    value={recipe.waterAmount}
+                    onChange={(e) =>
+                      setRecipe({
+                        ...recipe,
+                        waterAmount: Number(e.target.value),
                       })
                     }
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring focus:ring-amber-200"
@@ -548,7 +601,7 @@ function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="font-semibold text-amber-900 mb-2 flex items-center">
-                    <Flask className="w-5 h-5 mr-2" />
+                    <FlaskConical className="w-5 h-5 mr-2" />
                     Recipe Details
                   </h3>
                   <div className="bg-amber-50 p-4 rounded-lg">
@@ -563,6 +616,9 @@ function App() {
                     </p>
                     <p className="text-amber-800">
                       <strong>Expected FG:</strong> {recipe.expectedFG}
+                    </p>
+                    <p className="text-amber-800">
+                      <strong>Water Amount:</strong> {recipe.waterAmount}L
                     </p>
                   </div>
                 </div>
@@ -595,6 +651,42 @@ function App() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Saved Recipes Section */}
+        <div className="max-w-4xl mx-auto mb-8 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
+            <h2 className="text-2xl font-bold text-white flex items-center">
+              <Download className="w-6 h-6 mr-2" />
+              Saved Recipes
+            </h2>
+          </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {savedRecipes.map((recipeName, index) => (
+              <div
+                key={index}
+                className="bg-amber-100 rounded-lg p-4 flex flex-col"
+              >
+                <span className="text-amber-800 font-semibold mb-2">
+                  {recipeName}
+                </span>
+                <div className="flex justify-between mt-auto">
+                  <button
+                    onClick={() => loadRecipe(recipeName)}
+                    className="px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors text-sm"
+                  >
+                    Load
+                  </button>
+                  <button
+                    onClick={() => deleteRecipe(recipeName)}
+                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto space-y-4">
@@ -730,7 +822,7 @@ function App() {
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <Flask className="w-6 h-6 text-amber-600 flex-shrink-0" />
+              <FlaskConical className="w-6 h-6 text-amber-600 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-amber-800">Cornelius Keg</h3>
                 <p className="text-amber-700 text-sm">
