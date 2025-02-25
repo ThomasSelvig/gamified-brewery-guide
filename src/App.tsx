@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { Beer, Sparkles, Thermometer, Timer, CheckCircle2, XCircle, ChevronDown, ChevronUp, Droplets, FlaskRound as Flask, Gauge, Scale } from 'lucide-react';
+import { Beer, Sparkles, Thermometer, Timer, CheckCircle2, XCircle, ChevronDown, ChevronUp, 
+         Droplets, FlaskRound as Flask, Gauge, Scale, DollarSign, Building2, Package } from 'lucide-react';
 
 interface Step {
   id: number;
   title: string;
   description: string;
+  imageUrl: string;
   tasks: {
     id: number;
     text: string;
     completed: boolean;
+  }[];
+  info?: {
+    title: string;
+    content: string[];
   }[];
   isExpanded: boolean;
 }
@@ -17,9 +23,44 @@ function App() {
   const [steps, setSteps] = useState<Step[]>([
     {
       id: 1,
-      title: "Quest 1: The Sacred Cleansing Ritual",
-      description: "Before we embark on our brewing journey, we must purify our equipment. A clean brewery is a happy brewery!",
+      title: "Prerequisites & Equipment",
+      description: "Before we begin our brewing journey, let's ensure we have everything we need.",
+      imageUrl: "https://images.unsplash.com/photo-1559526324-593bc073d938?auto=format&fit=crop&q=80&w=1000",
       isExpanded: true,
+      info: [
+        {
+          title: "Location",
+          content: [
+            "Kristiania Bryggeri",
+            "Book your session at kristianiabrygg.no"
+          ]
+        },
+        {
+          title: "Required Equipment",
+          content: [
+            "20L Speidel brewing system",
+            "Mash bucket with 2 filters",
+            "Fermentation bucket",
+            "Cornelius keg",
+            "Temperature meter"
+          ]
+        },
+        {
+          title: "Costs",
+          content: [
+            "Guild Member: Malt (Free), Yeast (50kr), Hops (Free)",
+            "Private: Malt (100kr), Yeast (50kr), Hops (Free)"
+          ]
+        }
+      ],
+      tasks: []
+    },
+    {
+      id: 2,
+      title: "Quest 1: The Sacred Cleansing Ritual",
+      description: "A clean brewery is essential for great beer. Let's prepare our equipment.",
+      imageUrl: "https://images.unsplash.com/photo-1585936369668-cb58d314c958?auto=format&fit=crop&q=80&w=1000",
+      isExpanded: false,
       tasks: [
         { id: 1, text: "Check pump for grain residue", completed: false },
         { id: 2, text: "Flush pump openings thoroughly", completed: false },
@@ -28,34 +69,52 @@ function App() {
       ]
     },
     {
-      id: 2,
+      id: 3,
       title: "Quest 2: The Water Ceremony",
-      description: "The foundation of our magical brew begins with the perfect amount of water.",
+      description: "Water is the foundation of our brew. Precise measurements are crucial.",
+      imageUrl: "https://images.unsplash.com/photo-1584225064785-c62a8b43d148?auto=format&fit=crop&q=80&w=1000",
       isExpanded: false,
-      tasks: [
-        { id: 1, text: "Add 22L of water (remember to reserve 5L for mashing)", completed: false },
-        { id: 2, text: "Total target volume: 27L", completed: false },
-        { id: 3, text: "Pro tip: Reduce total water by 3L due to less evaporation", completed: false }
-      ]
+      info: [
+        {
+          title: "Water Measurements",
+          content: [
+            "Total required: 27 liters",
+            "Initial amount: 22 liters",
+            "Note: Reduce total by 3 liters due to less evaporation",
+            "Reserve 5 liters for mashing"
+          ]
+        }
+      ],
+      tasks: []
     },
     {
-      id: 3,
+      id: 4,
       title: "Quest 3: The Mashing Adventure",
-      description: "Time to combine our sacred ingredients and begin the transformation!",
+      description: "Time to combine our ingredients and begin the transformation!",
+      imageUrl: "https://images.unsplash.com/photo-1558642891-54be180ea339?auto=format&fit=crop&q=80&w=1000",
       isExpanded: false,
       tasks: [
         { id: 1, text: "Mount red rubber in kettle", completed: false },
         { id: 2, text: "Install filter bottom with filter", completed: false },
         { id: 3, text: "Add malt (max 7-8kg)", completed: false },
-        { id: 4, text: "Mount top system with filter and wheel", completed: false },
-        { id: 5, text: "Pump every 20 minutes (turn off for 1 min)", completed: false },
-        { id: 6, text: "Check boil gravity", completed: false }
+        { id: 4, text: "Mount top system with filter and wheel", completed: false }
+      ],
+      info: [
+        {
+          title: "Pump Operation",
+          content: [
+            "Pump every 20 minutes",
+            "Turn off pump for 1 minute during each interval",
+            "Check mash temperature according to recipe"
+          ]
+        }
       ]
     },
     {
-      id: 4,
+      id: 5,
       title: "Quest 4: The Sacred Boil",
       description: "Watch as our potion reaches its boiling point and transforms!",
+      imageUrl: "https://images.unsplash.com/photo-1615332579037-3c44b3660b53?auto=format&fit=crop&q=80&w=1000",
       isExpanded: false,
       tasks: [
         { id: 1, text: "Reach temperature of 102°C", completed: false },
@@ -64,9 +123,10 @@ function App() {
       ]
     },
     {
-      id: 5,
+      id: 6,
       title: "Quest 5: The Cooling Challenge",
       description: "Patience, young brewer! We must cool our potion to the perfect temperature.",
+      imageUrl: "https://images.unsplash.com/photo-1583743089695-4b816a340f82?auto=format&fit=crop&q=80&w=1000",
       isExpanded: false,
       tasks: [
         { id: 1, text: "Cool to 20°C", completed: false },
@@ -74,16 +134,25 @@ function App() {
       ]
     },
     {
-      id: 6,
+      id: 7,
       title: "Final Quest: The Fermentation Ritual",
       description: "The final transformation begins as we summon the power of yeast!",
+      imageUrl: "https://images.unsplash.com/photo-1562529024-9e7f8b99d5a4?auto=format&fit=crop&q=80&w=1000",
       isExpanded: false,
       tasks: [
         { id: 1, text: "Clean fermentation bucket with Star-san", completed: false },
         { id: 2, text: "Add yeast", completed: false },
-        { id: 3, text: "Mount airlock with Star-san", completed: false },
-        { id: 4, text: "Check bubbling after one week", completed: false },
-        { id: 5, text: "Monitor Star-san level in airlock", completed: false }
+        { id: 3, text: "Mount airlock with Star-san", completed: false }
+      ],
+      info: [
+        {
+          title: "Monitoring",
+          content: [
+            "Check for bubbling after 7 days",
+            "Monitor Star-san level in airlock",
+            "Ensure airlock remains properly sealed"
+          ]
+        }
       ]
     }
   ]);
@@ -110,13 +179,17 @@ function App() {
   };
 
   const calculateProgress = (step: Step) => {
+    if (step.tasks.length === 0) return 100;
     const completed = step.tasks.filter(task => task.completed).length;
     return (completed / step.tasks.length) * 100;
   };
 
   const totalProgress = () => {
-    const totalTasks = steps.reduce((acc, step) => acc + step.tasks.length, 0);
-    const completedTasks = steps.reduce((acc, step) => 
+    const stepsWithTasks = steps.filter(step => step.tasks.length > 0);
+    if (stepsWithTasks.length === 0) return 100;
+    
+    const totalTasks = stepsWithTasks.reduce((acc, step) => acc + step.tasks.length, 0);
+    const completedTasks = stepsWithTasks.reduce((acc, step) => 
       acc + step.tasks.filter(task => task.completed).length, 0
     );
     return (completedTasks / totalTasks) * 100;
@@ -148,7 +221,7 @@ function App() {
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-4">
+        <div className="max-w-4xl mx-auto space-y-4">
           {steps.map(step => (
             <div 
               key={step.id}
@@ -166,47 +239,79 @@ function App() {
 
               {step.isExpanded && (
                 <div className="p-6">
-                  <p className="text-amber-800 mb-4">{step.description}</p>
-                  <div className="space-y-3">
-                    {step.tasks.map(task => (
-                      <div
-                        key={task.id}
-                        className="flex items-center space-x-3 p-2 hover:bg-amber-50 rounded-lg transition-colors duration-200"
-                      >
-                        <button
-                          onClick={() => toggleTask(step.id, task.id)}
-                          className="flex-1 flex items-center space-x-3 text-left"
-                        >
-                          {task.completed ? (
-                            <CheckCircle2 className="w-6 h-6 text-green-500" />
-                          ) : (
-                            <XCircle className="w-6 h-6 text-amber-300" />
-                          )}
-                          <span className={task.completed ? "text-gray-500 line-through" : "text-gray-700"}>
-                            {task.text}
-                          </span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4">
-                    <div className="bg-amber-100 rounded-full h-2 w-full overflow-hidden">
-                      <div 
-                        className="h-full bg-amber-500 transition-all duration-500"
-                        style={{ width: `${calculateProgress(step)}%` }}
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="md:w-1/2">
+                      <img 
+                        src={step.imageUrl} 
+                        alt={step.title}
+                        className="w-full h-64 object-cover rounded-lg shadow-md"
                       />
                     </div>
-                    <p className="text-sm text-amber-700 mt-2">
-                      Quest Progress: {calculateProgress(step).toFixed(0)}%
-                    </p>
+                    <div className="md:w-1/2">
+                      <p className="text-amber-800 mb-4">{step.description}</p>
+                      
+                      {step.info && (
+                        <div className="mb-6 space-y-4">
+                          {step.info.map((info, idx) => (
+                            <div key={idx} className="bg-amber-50 p-4 rounded-lg">
+                              <h3 className="font-semibold text-amber-900 mb-2">{info.title}</h3>
+                              <ul className="space-y-1">
+                                {info.content.map((item, i) => (
+                                  <li key={i} className="text-amber-800 text-sm">{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {step.tasks.length > 0 && (
+                        <div className="space-y-3">
+                          {step.tasks.map(task => (
+                            <div
+                              key={task.id}
+                              className="flex items-center space-x-3 p-2 hover:bg-amber-50 rounded-lg transition-colors duration-200"
+                            >
+                              <button
+                                onClick={() => toggleTask(step.id, task.id)}
+                                className="flex-1 flex items-center space-x-3 text-left"
+                              >
+                                {task.completed ? (
+                                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                                ) : (
+                                  <XCircle className="w-6 h-6 text-amber-300" />
+                                )}
+                                <span className={task.completed ? "text-gray-500 line-through" : "text-gray-700"}>
+                                  {task.text}
+                                </span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  {step.tasks.length > 0 && (
+                    <div className="mt-4">
+                      <div className="bg-amber-100 rounded-full h-2 w-full overflow-hidden">
+                        <div 
+                          className="h-full bg-amber-500 transition-all duration-500"
+                          style={{ width: `${calculateProgress(step)}%` }}
+                        />
+                      </div>
+                      <p className="text-sm text-amber-700 mt-2">
+                        Quest Progress: {calculateProgress(step).toFixed(0)}%
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        <div className="mt-8 max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <div className="mt-8 max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-amber-900 mb-4 flex items-center">
             <Sparkles className="w-6 h-6 mr-2" />
             Brewmaster's Pro Tips
