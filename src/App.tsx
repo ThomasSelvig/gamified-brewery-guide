@@ -1,353 +1,189 @@
-import React, { useState } from 'react';
-import { Beer, Sparkles, Thermometer, Timer, CheckCircle2, XCircle, ChevronDown, ChevronUp, 
-         Droplets, FlaskRound as Flask, Gauge, Scale, DollarSign, Building2, Package } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Beer, Thermometer, Timer, Droplets, FlaskRound as Flask, Shield, ArrowDown, CheckCircle2, XCircle } from 'lucide-react';
 
 interface Step {
   id: number;
   title: string;
   description: string;
-  imageUrl: string;
+  icon: React.ReactNode;
   tasks: {
     id: number;
-    text: string;
+    task: string;
     completed: boolean;
   }[];
-  info?: {
-    title: string;
-    content: string[];
-  }[];
-  isExpanded: boolean;
+  temperature?: number;
+  duration?: number;
 }
 
 function App() {
-  const [steps, setSteps] = useState<Step[]>([
+  const [currentStep, setCurrentStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  const steps: Step[] = [
     {
       id: 1,
-      title: "Prerequisites & Equipment",
-      description: "Before we begin our brewing journey, let's ensure we have everything we need.",
-      imageUrl: "https://images.unsplash.com/photo-1559526324-593bc073d938?auto=format&fit=crop&q=80&w=1000",
-      isExpanded: true,
-      info: [
-        {
-          title: "Location",
-          content: [
-            "Kristiania Bryggeri",
-            "Book your session at kristianiabrygg.no"
-          ]
-        },
-        {
-          title: "Required Equipment",
-          content: [
-            "20L Speidel brewing system",
-            "Mash bucket with 2 filters",
-            "Fermentation bucket",
-            "Cornelius keg",
-            "Temperature meter"
-          ]
-        },
-        {
-          title: "Costs",
-          content: [
-            "Guild Member: Malt (Free), Yeast (50kr), Hops (Free)",
-            "Private: Malt (100kr), Yeast (50kr), Hops (Free)"
-          ]
-        }
-      ],
-      tasks: []
+      title: "Preparation & Cleaning",
+      description: "First things first - let's make sure everything is spotless! A clean brewery is a happy brewery.",
+      icon: <Shield className="w-8 h-8 text-blue-500" />,
+      tasks: [
+        { id: 1, task: "Check pump for malt residue", completed: false },
+        { id: 2, task: "Flush pump holes thoroughly", completed: false },
+        { id: 3, task: "Clean heating elements", completed: false },
+        { id: 4, task: "Run Star-san through system", completed: false }
+      ]
     },
     {
       id: 2,
-      title: "Quest 1: The Sacred Cleansing Ritual",
-      description: "A clean brewery is essential for great beer. Let's prepare our equipment.",
-      imageUrl: "https://images.unsplash.com/photo-1585936369668-cb58d314c958?auto=format&fit=crop&q=80&w=1000",
-      isExpanded: false,
+      title: "Water Setup",
+      description: "Time to get the perfect amount of water ready for our brew!",
+      icon: <Droplets className="w-8 h-8 text-blue-500" />,
+      temperature: 65,
       tasks: [
-        { id: 1, text: "Check pump for grain residue", completed: false },
-        { id: 2, text: "Flush pump openings thoroughly", completed: false },
-        { id: 3, text: "Clean heating elements", completed: false },
-        { id: 4, text: "Run Star-san solution through the system", completed: false }
+        { id: 1, task: "Add 22L initial water", completed: false },
+        { id: 2, task: "Reserve 5L for mashing", completed: false },
+        { id: 3, task: "Note: Total target is 27L", completed: false }
       ]
     },
     {
       id: 3,
-      title: "Quest 2: The Water Ceremony",
-      description: "Water is the foundation of our brew. Precise measurements are crucial.",
-      imageUrl: "https://images.unsplash.com/photo-1584225064785-c62a8b43d148?auto=format&fit=crop&q=80&w=1000",
-      isExpanded: false,
-      info: [
-        {
-          title: "Water Measurements",
-          content: [
-            "Total required: 27 liters",
-            "Initial amount: 22 liters",
-            "Note: Reduce total by 3 liters due to less evaporation",
-            "Reserve 5 liters for mashing"
-          ]
-        }
-      ],
-      tasks: []
+      title: "Mashing",
+      description: "The crucial step where we extract those sweet, sweet sugars from the malt.",
+      icon: <Flask className="w-8 h-8 text-amber-500" />,
+      temperature: 67,
+      duration: 60,
+      tasks: [
+        { id: 1, task: "Mount red rubber in kettle", completed: false },
+        { id: 2, task: "Place filter bottom with filter", completed: false },
+        { id: 3, task: "Add malt (max 7-8kg)", completed: false },
+        { id: 4, task: "Mount top system with filter and wheel", completed: false },
+        { id: 5, task: "Pump every 20 minutes (1 min pause)", completed: false }
+      ]
     },
     {
       id: 4,
-      title: "Quest 3: The Mashing Adventure",
-      description: "Time to combine our ingredients and begin the transformation!",
-      imageUrl: "https://images.unsplash.com/photo-1558642891-54be180ea339?auto=format&fit=crop&q=80&w=1000",
-      isExpanded: false,
+      title: "Boiling",
+      description: "Watch the magic happen as we boil and add hops!",
+      icon: <Thermometer className="w-8 h-8 text-red-500" />,
+      temperature: 102,
+      duration: 60,
       tasks: [
-        { id: 1, text: "Mount red rubber in kettle", completed: false },
-        { id: 2, text: "Install filter bottom with filter", completed: false },
-        { id: 3, text: "Add malt (max 7-8kg)", completed: false },
-        { id: 4, text: "Mount top system with filter and wheel", completed: false }
-      ],
-      info: [
-        {
-          title: "Pump Operation",
-          content: [
-            "Pump every 20 minutes",
-            "Turn off pump for 1 minute during each interval",
-            "Check mash temperature according to recipe"
-          ]
-        }
+        { id: 1, task: "Reach boiling temperature (102°C)", completed: false },
+        { id: 2, task: "Add hops according to recipe", completed: false },
+        { id: 3, task: "Maintain rolling boil", completed: false }
       ]
     },
     {
       id: 5,
-      title: "Quest 4: The Sacred Boil",
-      description: "Watch as our potion reaches its boiling point and transforms!",
-      imageUrl: "https://images.unsplash.com/photo-1615332579037-3c44b3660b53?auto=format&fit=crop&q=80&w=1000",
-      isExpanded: false,
+      title: "Cooling & Fermentation",
+      description: "Cool it down and let the yeast do its thing!",
+      icon: <Timer className="w-8 h-8 text-green-500" />,
+      temperature: 20,
       tasks: [
-        { id: 1, text: "Reach temperature of 102°C", completed: false },
-        { id: 2, text: "Maintain boil for 60 minutes", completed: false },
-        { id: 3, text: "Add hops according to recipe timing", completed: false }
-      ]
-    },
-    {
-      id: 6,
-      title: "Quest 5: The Cooling Challenge",
-      description: "Patience, young brewer! We must cool our potion to the perfect temperature.",
-      imageUrl: "https://images.unsplash.com/photo-1583743089695-4b816a340f82?auto=format&fit=crop&q=80&w=1000",
-      isExpanded: false,
-      tasks: [
-        { id: 1, text: "Cool to 20°C", completed: false },
-        { id: 2, text: "Use external thermometer for accuracy", completed: false }
-      ]
-    },
-    {
-      id: 7,
-      title: "Final Quest: The Fermentation Ritual",
-      description: "The final transformation begins as we summon the power of yeast!",
-      imageUrl: "https://images.unsplash.com/photo-1562529024-9e7f8b99d5a4?auto=format&fit=crop&q=80&w=1000",
-      isExpanded: false,
-      tasks: [
-        { id: 1, text: "Clean fermentation bucket with Star-san", completed: false },
-        { id: 2, text: "Add yeast", completed: false },
-        { id: 3, text: "Mount airlock with Star-san", completed: false }
-      ],
-      info: [
-        {
-          title: "Monitoring",
-          content: [
-            "Check for bubbling after 7 days",
-            "Monitor Star-san level in airlock",
-            "Ensure airlock remains properly sealed"
-          ]
-        }
+        { id: 1, task: "Cool to 20°C", completed: false },
+        { id: 2, task: "Clean fermentation bucket with Star-san", completed: false },
+        { id: 3, task: "Add yeast", completed: false },
+        { id: 4, task: "Mount airlock with Star-san", completed: false }
       ]
     }
-  ]);
+  ];
 
-  const toggleStep = (stepId: number) => {
-    setSteps(steps.map(step => ({
-      ...step,
-      isExpanded: step.id === stepId ? !step.isExpanded : step.isExpanded
-    })));
-  };
-
-  const toggleTask = (stepId: number, taskId: number) => {
-    setSteps(steps.map(step => {
-      if (step.id === stepId) {
-        return {
-          ...step,
-          tasks: step.tasks.map(task => 
-            task.id === taskId ? { ...task, completed: !task.completed } : task
-          )
-        };
-      }
-      return step;
-    }));
-  };
-
-  const calculateProgress = (step: Step) => {
-    if (step.tasks.length === 0) return 100;
-    const completed = step.tasks.filter(task => task.completed).length;
-    return (completed / step.tasks.length) * 100;
-  };
-
-  const totalProgress = () => {
-    const stepsWithTasks = steps.filter(step => step.tasks.length > 0);
-    if (stepsWithTasks.length === 0) return 100;
+  const toggleTask = (stepIndex: number, taskId: number) => {
+    const newSteps = [...steps];
+    const taskIndex = newSteps[stepIndex].tasks.findIndex(t => t.id === taskId);
+    newSteps[stepIndex].tasks[taskIndex].completed = !newSteps[stepIndex].tasks[taskIndex].completed;
     
-    const totalTasks = stepsWithTasks.reduce((acc, step) => acc + step.tasks.length, 0);
-    const completedTasks = stepsWithTasks.reduce((acc, step) => 
-      acc + step.tasks.filter(task => task.completed).length, 0
-    );
-    return (completedTasks / totalTasks) * 100;
+    // Calculate progress
+    const totalTasks = steps.reduce((acc, step) => acc + step.tasks.length, 0);
+    const completedTasks = steps.reduce((acc, step) => 
+      acc + step.tasks.filter(t => t.completed).length, 0);
+    setProgress((completedTasks / totalTasks) * 100);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Beer className="w-12 h-12 text-amber-600" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-amber-600 text-white py-6 px-4 shadow-lg">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Beer className="w-8 h-8" />
+            <h1 className="text-2xl font-bold">Amber Ale Brewing Guide</h1>
           </div>
-          <h1 className="text-4xl font-bold text-amber-900 mb-2">
-            The Brewmaster's Quest
-          </h1>
-          <p className="text-amber-700">
-            Your journey to crafting the perfect Amber Ale begins here!
-          </p>
-          <div className="mt-4">
-            <div className="bg-white rounded-full h-4 w-full max-w-md mx-auto overflow-hidden shadow-inner">
-              <div 
-                className="h-full bg-amber-500 transition-all duration-500"
-                style={{ width: `${totalProgress()}%` }}
-              />
-            </div>
-            <p className="text-amber-800 mt-2">
-              Overall Progress: {totalProgress().toFixed(0)}%
-            </p>
+          <div className="text-lg">
+            Progress: {Math.round(progress)}%
           </div>
         </div>
+      </header>
 
-        <div className="max-w-4xl mx-auto space-y-4">
-          {steps.map(step => (
-            <div 
-              key={step.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300"
-            >
-              <button
-                onClick={() => toggleStep(step.id)}
-                className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-amber-500 to-amber-600 text-white"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-xl font-semibold">{step.title}</span>
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto py-8 px-4">
+        <div className="space-y-12">
+          {steps.map((step, index) => (
+            <div key={step.id} className={`relative ${
+              index === currentStep ? 'scale-100' : 'scale-95'
+            } transform transition-all duration-300`}>
+              <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-amber-100">
+                <div className="flex items-center gap-4 mb-4">
+                  {step.icon}
+                  <h2 className="text-xl font-semibold text-gray-800">{step.title}</h2>
                 </div>
-                {step.isExpanded ? <ChevronUp /> : <ChevronDown />}
-              </button>
+                
+                <p className="text-gray-600 mb-6">{step.description}</p>
 
-              {step.isExpanded && (
-                <div className="p-6">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="md:w-1/2">
-                      <img 
-                        src={step.imageUrl} 
-                        alt={step.title}
-                        className="w-full h-64 object-cover rounded-lg shadow-md"
-                      />
-                    </div>
-                    <div className="md:w-1/2">
-                      <p className="text-amber-800 mb-4">{step.description}</p>
-                      
-                      {step.info && (
-                        <div className="mb-6 space-y-4">
-                          {step.info.map((info, idx) => (
-                            <div key={idx} className="bg-amber-50 p-4 rounded-lg">
-                              <h3 className="font-semibold text-amber-900 mb-2">{info.title}</h3>
-                              <ul className="space-y-1">
-                                {info.content.map((item, i) => (
-                                  <li key={i} className="text-amber-800 text-sm">{item}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {step.tasks.length > 0 && (
-                        <div className="space-y-3">
-                          {step.tasks.map(task => (
-                            <div
-                              key={task.id}
-                              className="flex items-center space-x-3 p-2 hover:bg-amber-50 rounded-lg transition-colors duration-200"
-                            >
-                              <button
-                                onClick={() => toggleTask(step.id, task.id)}
-                                className="flex-1 flex items-center space-x-3 text-left"
-                              >
-                                {task.completed ? (
-                                  <CheckCircle2 className="w-6 h-6 text-green-500" />
-                                ) : (
-                                  <XCircle className="w-6 h-6 text-amber-300" />
-                                )}
-                                <span className={task.completed ? "text-gray-500 line-through" : "text-gray-700"}>
-                                  {task.text}
-                                </span>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {step.tasks.length > 0 && (
-                    <div className="mt-4">
-                      <div className="bg-amber-100 rounded-full h-2 w-full overflow-hidden">
-                        <div 
-                          className="h-full bg-amber-500 transition-all duration-500"
-                          style={{ width: `${calculateProgress(step)}%` }}
-                        />
+                {(step.temperature || step.duration) && (
+                  <div className="flex gap-6 mb-6">
+                    {step.temperature && (
+                      <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-md">
+                        <Thermometer className="w-5 h-5 text-blue-500" />
+                        <span className="text-blue-700">{step.temperature}°C</span>
                       </div>
-                      <p className="text-sm text-amber-700 mt-2">
-                        Quest Progress: {calculateProgress(step).toFixed(0)}%
-                      </p>
+                    )}
+                    {step.duration && (
+                      <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-md">
+                        <Timer className="w-5 h-5 text-green-500" />
+                        <span className="text-green-700">{step.duration} minutes</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {step.tasks.map(task => (
+                    <div
+                      key={task.id}
+                      className={`flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${
+                        task.completed ? 'bg-green-50' : 'bg-gray-50 hover:bg-gray-100'
+                      }`}
+                      onClick={() => toggleTask(index, task.id)}
+                    >
+                      {task.completed ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-gray-400" />
+                      )}
+                      <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                        {task.task}
+                      </span>
                     </div>
-                  )}
+                  ))}
+                </div>
+              </div>
+
+              {index < steps.length - 1 && (
+                <div className="flex justify-center my-4">
+                  <ArrowDown className="w-6 h-6 text-amber-500" />
                 </div>
               )}
             </div>
           ))}
         </div>
+      </main>
 
-        <div className="mt-8 max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-amber-900 mb-4 flex items-center">
-            <Sparkles className="w-6 h-6 mr-2" />
-            Brewmaster's Pro Tips
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-start space-x-3">
-              <Thermometer className="w-6 h-6 text-amber-600 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-amber-800">Temperature Control</h3>
-                <p className="text-amber-700 text-sm">Hold MANU + adjust temp (H=heat, P=pump)</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <Timer className="w-6 h-6 text-amber-600 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-amber-800">Pump Operation</h3>
-                <p className="text-amber-700 text-sm">Multiple activations needed for optimal function</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <Flask className="w-6 h-6 text-amber-600 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-amber-800">Cornelius Keg</h3>
-                <p className="text-amber-700 text-sm">Gas: TOP, Liquid: BOTTOM</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <Gauge className="w-6 h-6 text-amber-600 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-amber-800">Gas Regulation</h3>
-                <p className="text-amber-700 text-sm">Clockwise = more, Counter-clockwise = less</p>
-              </div>
-            </div>
-          </div>
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-6 px-4 mt-12">
+        <div className="max-w-4xl mx-auto text-center">
+          <p>Happy brewing! Remember to take notes and have fun! 🍺</p>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
