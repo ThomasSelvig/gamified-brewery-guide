@@ -1,0 +1,81 @@
+BRYGGING_AV_ØL:
+  FORUTSETNINGER:
+    lokale: "Kristiania Bryggeri (book på kristianiabrygg.no)"
+    utstyr_påkrevd:
+      - "20L Speidel bryggeanlegg"
+      - "Mash bøtte med filter"
+      - "Fermenteringsbøtte"
+      - "Korneliusfat"
+      - "Temperaturmåler"
+    kostnader:
+      lauget_medlem:
+        malt: "gratis"
+        gjær: "50kr"
+        humle: "sponset"
+      privat:
+        malt: "100kr"
+        gjær: "50kr"
+        humle: "sponset"
+
+  PROSESS_STEG:
+    1_FORBEREDELSE:
+      rengjøring:
+        - "Sjekk pumpe for maltrester"
+        - "Spyl pumpehull"
+        - "Rengjør varmestenger"
+        - "Kjør Star-san gjennom system"
+      
+    2_BRYGGING:
+      vannmengde:
+        total: "27L"
+        initial: "22L (trekk fra 5L for mashing)"
+        notater: "Reduser total vannmengde med 3L pga. mindre fordamping"
+      
+      mashing:
+        temperatur: "Se oppskrift for eksakt temperatur"
+        utstyr_oppsett:
+          - "Monter rød gummi i kjele"
+          - "Sett filterbunn med filter"
+          - "Tilsett malt (maks 7-8kg)"
+          - "Monter toppsystem med filter og hjul"
+        prosess:
+          - "Pump hvert 20. minutt (slå av 1 min)"
+          - "Sjekk 'boil gravity'"
+      
+      koking:
+        temperatur: "102°C"
+        varighet: "60 minutter"
+        humle_tilsetning: "Følg oppskrift for timing"
+        
+      avkjøling:
+        mål_temperatur: "20°C"
+        måling: "Bruk ekstern temperaturmåler"
+
+    3_FERMENTERING:
+      forberedelse:
+        - "Rengjør fermenteringsbøtte med Star-san"
+        - "Tilsett gjær"
+        - "Monter gjærlås med Star-san"
+      oppfølging:
+        - "Sjekk bobling etter en uke"
+        - "Kontroller Star-san nivå i gjærlås"
+
+    4_RENGJØRING:
+      utstyr:
+        - "Skrubb alt utstyr med varmtvann"
+        - "Tynn ut bunnslam før tømming"
+        - "Rengjør Speidel grundig"
+      fat_rengjøring:
+        pbw_prosess:
+          blandingsforhold: "40g PBW per 4L lunkent vann"
+          metode: "Gass-til-gass overføring mellom fat"
+        etterbehandling: "Grundig skylling av alt PBW-eksponert utstyr"
+
+VIKTIGE_NOTATER:
+  temperatur_kontroll: "Hold MANU + still temp (H=varme, P=pumpe)"
+  pumpe_oppstart: "Må aktiveres flere ganger for optimal funksjon"
+  korneliusfat:
+    tilkoblinger:
+      gass: "OPPE"
+      væske: "NEDE"
+    gassregulering: "MED klokka = mer, MOT klokka = mindre"
