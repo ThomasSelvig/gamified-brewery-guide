@@ -1870,7 +1870,7 @@ const App: React.FC = () => {
         <div className="container mx-auto text-center text-sm">
           <p>BrewMaster Quest - Learn brewing through gamified experience</p>
           <p className="mt-1 text-gray-400">
-            Made with ❤️ for beer enthusiasts
+            Made with ❤️ for beer enthusiasts by Thomas Selvig
           </p>
         </div>
       </footer>
