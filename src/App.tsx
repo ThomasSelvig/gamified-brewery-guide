@@ -1194,16 +1194,19 @@ const App: React.FC = () => {
                 <ChefHat className="mr-2 h-5 w-5" />
                 Start Brewing Adventure!
               </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <button
                 onClick={saveRecipe}
-                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg font-medium hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
               >
                 <Save className="mr-2 h-5 w-5" />
                 Save Recipe
               </button>
               <button
                 onClick={generateShareableLink}
-                className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center justify-center"
+                className="flex-1 bg-green-100 text-green-700 py-2 px-4 rounded-lg font-medium hover:bg-green-200 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center justify-center"
               >
                 <Share2 className="mr-2 h-5 w-5" />
                 Share Recipe
