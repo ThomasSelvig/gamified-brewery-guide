@@ -17,19 +17,42 @@ import {
   Droplets,
   Settings,
   Trophy,
+  Save,
+  Download,
+  Trash2,
+  Share2,
+  Copy,
+  Plus,
+  BookOpen,
 } from "lucide-react";
 
 // Define types and interfaces
+interface MaltItem {
+  name: string;
+  amount: number;
+  unit: string;
+  timing?: string;
+}
+
+interface HopItem {
+  name: string;
+  amount: number;
+  unit: string;
+  timing: string;
+}
+
 interface RecipeInput {
   name: string;
-  malts: Array<{ name: string; amount: number; unit: string; timing?: string }>;
-  hops: Array<{ name: string; amount: number; unit: string; timing: string }>;
+  malts: MaltItem[];
+  hops: HopItem[];
   yeast: string;
   mashTemp: number;
   boilTemp: number;
   boilTime: number;
   targetOriginalGravity: number;
   targetFinalGravity: number;
+  initialWaterAmount: number;
+  notes?: string;
 }
 
 interface BrewStep {
@@ -49,6 +72,9 @@ interface BrewStep {
 }
 
 const App: React.FC = () => {
+  // Add this near other state declarations
+  const timerIntervalRef = React.useRef<number | null>(null);
+
   // State for recipe input
   const [recipeInput, setRecipeInput] = useState<RecipeInput>({
     name: "My Brew",
@@ -60,6 +86,8 @@ const App: React.FC = () => {
     boilTime: 60,
     targetOriginalGravity: 1.05,
     targetFinalGravity: 1.01,
+    initialWaterAmount: 25,
+    notes: "",
   });
 
   // State for UI
@@ -79,9 +107,35 @@ const App: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<
     "all" | "cleaning" | "brewing" | "fermentation"
   >("all");
+  const [savedRecipes, setSavedRecipes] = useState<RecipeInput[]>([]);
+  const [showSavedRecipes, setShowSavedRecipes] = useState<boolean>(false);
+  const [shareLink, setShareLink] = useState<string>("");
+  const [showShareLink, setShowShareLink] = useState<boolean>(false);
+  const [importInput, setImportInput] = useState<string>("");
+  const [showImportForm, setShowImportForm] = useState<boolean>(false);
 
-  // Initialize brewing steps based on the provided notes
+  // Load saved recipes from localStorage on component mount
   useEffect(() => {
+    const loadedRecipes = localStorage.getItem("brewMasterRecipes");
+    if (loadedRecipes) {
+      setSavedRecipes(JSON.parse(loadedRecipes));
+    }
+  }, []);
+
+  // Initialize brewing steps based on the recipe input
+  useEffect(() => {
+    const maltListText = recipeInput.malts
+      .filter((malt) => malt.name.trim() !== "")
+      .map((malt) => `${malt.amount}${malt.unit} of ${malt.name}`)
+      .join(", ");
+
+    const hopScheduleText = recipeInput.hops
+      .filter((hop) => hop.name.trim() !== "")
+      .map((hop) => `${hop.amount}${hop.unit} of ${hop.name} at ${hop.timing}`)
+      .join(", ");
+
+    const totalWaterNeeded = Math.max(recipeInput.initialWaterAmount - 3, 15); // Apply the 3L less water note
+
     setBrewSteps([
       {
         id: 1,
@@ -97,7 +151,7 @@ const App: React.FC = () => {
           },
           {
             id: 2,
-            text: "Prepare your recipe details and gather ingredients",
+            text: `Prepare your recipe for ${recipeInput.name} and gather ingredients`,
             completed: false,
           },
         ],
@@ -140,7 +194,7 @@ const App: React.FC = () => {
         substeps: [
           {
             id: 1,
-            text: "Fill with water. The marks on the rod show 15L, 20L, 25L. Always ensure heating rods are submerged.",
+            text: `Fill with ${totalWaterNeeded}L of water. The marks on the rod show 15L, 20L, 25L. Always ensure heating rods are submerged.`,
             completed: false,
           },
           {
@@ -159,7 +213,9 @@ const App: React.FC = () => {
         substeps: [
           {
             id: 1,
-            text: "Grind the malt (note: 7-8kg is maximum malt capacity)",
+            text: maltListText
+              ? `Grind the malts: ${maltListText} (note: 7-8kg is maximum malt capacity)`
+              : "Grind the malt (note: 7-8kg is maximum malt capacity)",
             completed: false,
           },
         ],
@@ -223,7 +279,9 @@ const App: React.FC = () => {
         substeps: [
           {
             id: 1,
-            text: "Add malt to the mash bucket",
+            text: maltListText
+              ? `Add the malts to the mash bucket: ${maltListText}`
+              : "Add malt to the mash bucket",
             completed: false,
           },
           {
@@ -264,7 +322,7 @@ const App: React.FC = () => {
           },
           {
             id: 2,
-            text: "When mashing is finished, check if gravity has reached boil gravity",
+            text: `When mashing is finished, check if gravity has reached target boil gravity of ${recipeInput.targetOriginalGravity}`,
             completed: false,
           },
           {
@@ -335,7 +393,9 @@ const App: React.FC = () => {
         substeps: [
           {
             id: 1,
-            text: `Boil for ${recipeInput.boilTime} minutes (ADD HOPS according to schedule)`,
+            text: hopScheduleText
+              ? `Boil for ${recipeInput.boilTime} minutes and add hops according to this schedule: ${hopScheduleText}`
+              : `Boil for ${recipeInput.boilTime} minutes (ADD HOPS according to schedule)`,
             completed: false,
             hasTimer: true,
             timerDuration: recipeInput.boilTime * 60,
@@ -378,7 +438,11 @@ const App: React.FC = () => {
             text: "Transfer to Star-San sanitized fermentation bucket",
             completed: false,
           },
-          { id: 2, text: "Add YEAST and beer to the bucket", completed: false },
+          {
+            id: 2,
+            text: `Add ${recipeInput.yeast} yeast and beer to the bucket`,
+            completed: false,
+          },
           {
             id: 3,
             text: "Attach lid, airlock (with Star-San) and red airlock lid",
@@ -450,7 +514,7 @@ const App: React.FC = () => {
         ],
       },
     ]);
-  }, [recipeInput.mashTemp, recipeInput.boilTemp, recipeInput.boilTime]);
+  }, [recipeInput]);
 
   // Function to update recipe input
   const updateRecipeInput = (field: string, value: any) => {
@@ -509,18 +573,25 @@ const App: React.FC = () => {
     });
   };
 
-  // Function to start a timer
+  // Replace the startTimer function with this version
   const startTimer = (stepId: number, substepId: number, duration: number) => {
+    // Clear any existing interval
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+
     setActiveTimer({ stepId, substepId, timeLeft: duration });
 
-    const timer = setInterval(() => {
+    timerIntervalRef.current = window.setInterval(() => {
       setActiveTimer((prev) => {
         if (!prev) return null;
 
         const timeLeft = prev.timeLeft - 1;
 
         if (timeLeft <= 0) {
-          clearInterval(timer);
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+          }
           // Play sound
           const audio = new Audio(
             "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-back-2575.mp3"
@@ -535,6 +606,15 @@ const App: React.FC = () => {
       });
     }, 1000);
   };
+
+  // Add cleanup for the timer when component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Function to mark a step as completed
   const markSubstepComplete = (stepId: number, substepId: number) => {
@@ -559,7 +639,7 @@ const App: React.FC = () => {
             newSteps[stepIndex].completed = true;
 
             // Award experience points for completing a step
-            setExperience((prev) => prev + 20);
+            setExperience((prev) => prev + 25); // Increased from 20 to 25 to reach full XP
 
             // Add achievement if it's a significant step
             if ([5, 9, 13, 17].includes(stepId)) {
@@ -595,7 +675,7 @@ const App: React.FC = () => {
 
   // Function to navigate to the next step
   const goToNextStep = () => {
-    if (currentStep < brewSteps.length - 1) {
+    if (currentStep < getFilteredSteps().length - 1) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -628,6 +708,101 @@ const App: React.FC = () => {
     if (categoryFilter === "all") return brewSteps;
     return brewSteps.filter((step) => step.category === categoryFilter);
   };
+
+  // Function to set category filter and reset current step
+  const setFilterAndResetStep = (
+    filter: "all" | "cleaning" | "brewing" | "fermentation"
+  ) => {
+    setCategoryFilter(filter);
+    setCurrentStep(0); // Reset to first step when filter changes
+  };
+
+  // Function to save the current recipe
+  const saveRecipe = () => {
+    // Check if the recipe already exists
+    const existingIndex = savedRecipes.findIndex(
+      (r) => r.name === recipeInput.name
+    );
+
+    let updatedRecipes: RecipeInput[];
+
+    if (existingIndex !== -1) {
+      // Update existing recipe
+      updatedRecipes = [...savedRecipes];
+      updatedRecipes[existingIndex] = { ...recipeInput };
+    } else {
+      // Add new recipe
+      updatedRecipes = [...savedRecipes, { ...recipeInput }];
+    }
+
+    setSavedRecipes(updatedRecipes);
+    localStorage.setItem("brewMasterRecipes", JSON.stringify(updatedRecipes));
+
+    // Add achievement if it's their first saved recipe
+    if (savedRecipes.length === 0) {
+      setAchievements((prev) => [
+        ...prev,
+        "Recipe Keeper: First Recipe Saved!",
+      ]);
+      setExperience((prev) => prev + 10);
+    }
+  };
+
+  // Function to load a saved recipe
+  const loadRecipe = (recipe: RecipeInput) => {
+    setRecipeInput(recipe);
+    setShowSavedRecipes(false);
+  };
+
+  // Function to delete a saved recipe
+  const deleteRecipe = (recipeName: string) => {
+    const updatedRecipes = savedRecipes.filter((r) => r.name !== recipeName);
+    setSavedRecipes(updatedRecipes);
+    localStorage.setItem("brewMasterRecipes", JSON.stringify(updatedRecipes));
+  };
+
+  // Function to generate a shareable base64 string
+  const generateShareableLink = () => {
+    const recipeData = JSON.stringify(recipeInput);
+    const base64Recipe = btoa(encodeURIComponent(recipeData));
+    setShareLink(base64Recipe);
+    setShowShareLink(true);
+    navigator.clipboard.writeText(base64Recipe);
+  };
+
+  // Function to import a recipe from base64
+  const importRecipe = () => {
+    try {
+      const decodedData = decodeURIComponent(atob(importInput));
+      const importedRecipe = JSON.parse(decodedData) as RecipeInput;
+      setRecipeInput(importedRecipe);
+      setShowImportForm(false);
+      setImportInput("");
+      setAchievements((prev) => [
+        ...prev,
+        "Recipe Explorer: Imported a Recipe!",
+      ]);
+      setExperience((prev) => prev + 15);
+    } catch (error) {
+      alert("Invalid recipe format. Please check your input and try again.");
+    }
+  };
+
+  // Calculate the total malt weight
+  const totalMaltWeight = recipeInput.malts.reduce((sum, malt) => {
+    if (malt.unit === "kg") {
+      return sum + malt.amount;
+    } else if (malt.unit === "g") {
+      return sum + malt.amount / 1000;
+    }
+    return sum;
+  }, 0);
+
+  // Calculate estimated ABV
+  const estimatedABV = (
+    (recipeInput.targetOriginalGravity - recipeInput.targetFinalGravity) *
+    131.25
+  ).toFixed(1);
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
@@ -664,10 +839,32 @@ const App: React.FC = () => {
       <main className="container mx-auto py-6 px-4">
         {showRecipeForm ? (
           <div className="bg-white rounded-lg shadow-md p-6 max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-amber-700 flex items-center">
-              <Edit className="mr-2" />
-              Create Your Brew Recipe
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-amber-700 flex items-center">
+                <Edit className="mr-2" />
+                Create Your Brew Recipe
+              </h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowImportForm(true)}
+                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors flex items-center"
+                  aria-label="Import recipe"
+                >
+                  <Download className="mr-1 h-4 w-4" />
+                  Import
+                </button>
+                {savedRecipes.length > 0 && (
+                  <button
+                    onClick={() => setShowSavedRecipes(true)}
+                    className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors flex items-center"
+                    aria-label="Load recipe"
+                  >
+                    <BookOpen className="mr-1 h-4 w-4" />
+                    Load ({savedRecipes.length})
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="mb-6">
               <label
@@ -693,10 +890,11 @@ const App: React.FC = () => {
                 </label>
                 <button
                   onClick={addMalt}
-                  className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-sm hover:bg-amber-200 transition-colors"
+                  className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-sm hover:bg-amber-200 transition-colors flex items-center"
                   aria-label="Add malt"
                 >
-                  + Add Malt
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add Malt
                 </button>
               </div>
 
@@ -740,6 +938,13 @@ const App: React.FC = () => {
                   </button>
                 </div>
               ))}
+              {totalMaltWeight > 8 && (
+                <div className="text-red-600 text-sm mt-2 flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  Warning: Total malt weight ({totalMaltWeight.toFixed(2)} kg)
+                  exceeds maximum capacity (8kg)
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
@@ -749,10 +954,11 @@ const App: React.FC = () => {
                 </label>
                 <button
                   onClick={addHop}
-                  className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-sm hover:bg-amber-200 transition-colors"
+                  className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-sm hover:bg-amber-200 transition-colors flex items-center"
                   aria-label="Add hop"
                 >
-                  + Add Hop
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add Hop
                 </button>
               </div>
 
@@ -822,6 +1028,29 @@ const App: React.FC = () => {
                   onChange={(e) => updateRecipeInput("yeast", e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="Yeast strain"
+                />
+              </div>
+
+              <div>
+                <label
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                  htmlFor="initialWater"
+                >
+                  Initial Water Amount (L)
+                </label>
+                <input
+                  id="initialWater"
+                  type="number"
+                  value={recipeInput.initialWaterAmount}
+                  onChange={(e) =>
+                    updateRecipeInput(
+                      "initialWaterAmount",
+                      parseInt(e.target.value)
+                    )
+                  }
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  min="15"
+                  max="30"
                 />
               </div>
 
@@ -934,12 +1163,221 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={startBrewing}
-              className="w-full bg-amber-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-            >
-              Start Brewing Adventure!
-            </button>
+            <div className="mb-6">
+              <label
+                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="notes"
+              >
+                Additional Notes
+              </label>
+              <textarea
+                id="notes"
+                value={recipeInput.notes || ""}
+                onChange={(e) => updateRecipeInput("notes", e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                placeholder="Any additional notes about this recipe"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={startBrewing}
+                className="flex-1 bg-amber-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-amber-700 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center"
+              >
+                <ChefHat className="mr-2 h-5 w-5" />
+                Start Brewing Adventure!
+              </button>
+              <button
+                onClick={saveRecipe}
+                className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+              >
+                <Save className="mr-2 h-5 w-5" />
+                Save Recipe
+              </button>
+              <button
+                onClick={generateShareableLink}
+                className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center justify-center"
+              >
+                <Share2 className="mr-2 h-5 w-5" />
+                Share Recipe
+              </button>
+            </div>
+
+            {/* Modal for saved recipes */}
+            {showSavedRecipes && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-amber-700">
+                      Your Saved Recipes
+                    </h3>
+                    <button
+                      onClick={() => setShowSavedRecipes(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                      aria-label="Close saved recipes"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {savedRecipes.length > 0 ? (
+                    <ul className="space-y-2">
+                      {savedRecipes.map((recipe, index) => (
+                        <li
+                          key={index}
+                          className="bg-gray-50 p-3 rounded flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="font-medium">{recipe.name}</p>
+                            <p className="text-sm text-gray-600">
+                              {recipe.malts.filter((m) => m.name).length} malts,
+                              {recipe.hops.filter((h) => h.name).length} hops,
+                              Est. ABV:{" "}
+                              {(
+                                (recipe.targetOriginalGravity -
+                                  recipe.targetFinalGravity) *
+                                131.25
+                              ).toFixed(1)}
+                              %
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => loadRecipe(recipe)}
+                              className="bg-amber-100 text-amber-700 p-2 rounded hover:bg-amber-200"
+                              aria-label={`Load recipe ${recipe.name}`}
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteRecipe(recipe.name)}
+                              className="bg-red-100 text-red-700 p-2 rounded hover:bg-red-200"
+                              aria-label={`Delete recipe ${recipe.name}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">
+                      No saved recipes found. Save a recipe to see it here.
+                    </p>
+                  )}
+
+                  <button
+                    onClick={() => setShowSavedRecipes(false)}
+                    className="mt-4 w-full bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Modal for sharing recipe */}
+            {showShareLink && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-amber-700">
+                      Share Your Recipe
+                    </h3>
+                    <button
+                      onClick={() => setShowShareLink(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                      aria-label="Close share modal"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  <p className="mb-2 text-gray-600">
+                    Your recipe has been copied to clipboard! Share this code:
+                  </p>
+
+                  <div className="bg-gray-100 p-3 rounded-lg mb-4 break-all overflow-auto max-h-32 text-sm">
+                    {shareLink}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(shareLink);
+                        alert("Copied to clipboard!");
+                      }}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded flex items-center justify-center hover:bg-blue-700"
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy Again
+                    </button>
+                    <button
+                      onClick={() => setShowShareLink(false)}
+                      className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal for importing recipe */}
+            {showImportForm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-amber-700">
+                      Import Recipe
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowImportForm(false);
+                        setImportInput("");
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                      aria-label="Close import modal"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  <p className="mb-2 text-gray-600">
+                    Paste the recipe code here:
+                  </p>
+
+                  <textarea
+                    value={importInput}
+                    onChange={(e) => setImportInput(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Paste recipe code here..."
+                    rows={6}
+                  />
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={importRecipe}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded flex items-center justify-center hover:bg-blue-700"
+                      disabled={!importInput.trim()}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Import Recipe
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowImportForm(false);
+                        setImportInput("");
+                      }}
+                      className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col md:flex-row gap-6">
@@ -1020,27 +1458,115 @@ const App: React.FC = () => {
                   <PanelTop className="mr-2" />
                   Brew Details
                 </h3>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-4 text-sm">
                   <div>
-                    <span className="font-medium">Recipe Name:</span>{" "}
-                    {recipeInput.name}
+                    <span className="font-medium block mb-1">Recipe Name:</span>
+                    <div className="bg-amber-50 p-2 rounded text-amber-800">
+                      {recipeInput.name}
+                    </div>
                   </div>
+
+                  {/* Malt Bill */}
                   <div>
-                    <span className="font-medium">Mash Temp:</span>{" "}
-                    {recipeInput.mashTemp}°C
+                    <span className="font-medium block mb-1">Malt Bill:</span>
+                    {recipeInput.malts.filter((m) => m.name.trim() !== "")
+                      .length > 0 ? (
+                      <ul className="pl-5 list-disc">
+                        {recipeInput.malts
+                          .filter((malt) => malt.name.trim() !== "")
+                          .map((malt, idx) => (
+                            <li key={idx}>
+                              {malt.name}: {malt.amount} {malt.unit}
+                            </li>
+                          ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500 italic">
+                        No malts specified
+                      </div>
+                    )}
                   </div>
+
+                  {/* Hop Schedule */}
                   <div>
-                    <span className="font-medium">Boil Time:</span>{" "}
-                    {recipeInput.boilTime} min
+                    <span className="font-medium block mb-1">
+                      Hop Schedule:
+                    </span>
+                    {recipeInput.hops.filter((h) => h.name.trim() !== "")
+                      .length > 0 ? (
+                      <ul className="pl-5 list-disc">
+                        {recipeInput.hops
+                          .filter((hop) => hop.name.trim() !== "")
+                          .map((hop, idx) => (
+                            <li key={idx}>
+                              {hop.name}: {hop.amount} {hop.unit} at{" "}
+                              {hop.timing}
+                            </li>
+                          ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500 italic">
+                        No hops specified
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <span className="font-medium">Expected OG:</span>{" "}
-                    {recipeInput.targetOriginalGravity}
+
+                  {/* Other brewing details */}
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                    <div className="col-span-2">
+                      <span className="font-medium">Yeast:</span>{" "}
+                      {recipeInput.yeast || "Not specified"}
+                    </div>
+                    <div>
+                      <span className="font-medium">Water:</span>{" "}
+                      {recipeInput.initialWaterAmount}L
+                    </div>
+                    <div>
+                      <span className="font-medium">Actual:</span>{" "}
+                      {Math.max(recipeInput.initialWaterAmount - 3, 15)}L
+                    </div>
+                    <div>
+                      <span className="font-medium">Mash:</span>{" "}
+                      {recipeInput.mashTemp}°C
+                    </div>
+                    <div>
+                      <span className="font-medium">Boil:</span>{" "}
+                      {recipeInput.boilTemp}°C
+                    </div>
+                    <div>
+                      <span className="font-medium">Boil Time:</span>{" "}
+                      {recipeInput.boilTime} min
+                    </div>
+                    <div>
+                      <span className="font-medium">Est. ABV:</span>{" "}
+                      {estimatedABV}%
+                    </div>
+                    <div>
+                      <span className="font-medium">OG:</span>{" "}
+                      {recipeInput.targetOriginalGravity}
+                    </div>
+                    <div>
+                      <span className="font-medium">FG:</span>{" "}
+                      {recipeInput.targetFinalGravity}
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-medium">Expected FG:</span>{" "}
-                    {recipeInput.targetFinalGravity}
-                  </div>
+
+                  {recipeInput.notes && (
+                    <div>
+                      <span className="font-medium block mb-1">Notes:</span>
+                      <div className="bg-gray-50 p-2 rounded text-gray-700 text-xs">
+                        {recipeInput.notes}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setShowRecipeForm(true)}
+                    className="w-full bg-amber-100 text-amber-700 py-2 px-3 rounded text-sm hover:bg-amber-200 transition-colors mt-2 flex items-center justify-center"
+                  >
+                    <Edit className="mr-1 h-4 w-4" />
+                    Edit Recipe
+                  </button>
                 </div>
               </div>
             </div>
@@ -1051,7 +1577,7 @@ const App: React.FC = () => {
               <div className="bg-white rounded-lg shadow-md p-4 mb-4">
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => setCategoryFilter("all")}
+                    onClick={() => setFilterAndResetStep("all")}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       categoryFilter === "all"
                         ? "bg-amber-600 text-white"
@@ -1061,7 +1587,7 @@ const App: React.FC = () => {
                     All Steps
                   </button>
                   <button
-                    onClick={() => setCategoryFilter("cleaning")}
+                    onClick={() => setFilterAndResetStep("cleaning")}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       categoryFilter === "cleaning"
                         ? "bg-blue-600 text-white"
@@ -1072,7 +1598,7 @@ const App: React.FC = () => {
                     Cleaning
                   </button>
                   <button
-                    onClick={() => setCategoryFilter("brewing")}
+                    onClick={() => setFilterAndResetStep("brewing")}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       categoryFilter === "brewing"
                         ? "bg-amber-600 text-white"
@@ -1083,7 +1609,7 @@ const App: React.FC = () => {
                     Brewing
                   </button>
                   <button
-                    onClick={() => setCategoryFilter("fermentation")}
+                    onClick={() => setFilterAndResetStep("fermentation")}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       categoryFilter === "fermentation"
                         ? "bg-green-600 text-white"
@@ -1131,114 +1657,132 @@ const App: React.FC = () => {
 
               {/* Current step details */}
               <div className="bg-white rounded-lg shadow-md p-6 mb-4">
-                <div className="mb-4">
-                  <div className="flex items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-                        brewSteps[currentStep]?.category === "cleaning"
-                          ? "bg-blue-100 text-blue-700"
-                          : brewSteps[currentStep]?.category === "brewing"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      {brewSteps[currentStep]?.category === "cleaning" ? (
-                        <Droplets className="h-5 w-5" />
-                      ) : brewSteps[currentStep]?.category === "brewing" ? (
-                        <ChefHat className="h-5 w-5" />
-                      ) : (
-                        <Hourglass className="h-5 w-5" />
-                      )}
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold">
-                        {brewSteps[currentStep]?.title}
-                      </h2>
-                      <p className="text-gray-600">
-                        {brewSteps[currentStep]?.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image placeholder */}
-                <div className="mb-6 bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-                  <div className="text-gray-500 text-center p-4">
-                    <Home className="mx-auto mb-2 h-10 w-10" />
-                    <p>
-                      Image for step {currentStep + 1} will be displayed here
-                    </p>
-                  </div>
-                </div>
-
-                <h3 className="font-bold text-lg mb-3">Instructions:</h3>
-                <ul className="space-y-4">
-                  {brewSteps[currentStep]?.substeps.map((substep) => (
-                    <li key={substep.id} className="flex items-start">
-                      <div className="mr-3 mt-0.5">
-                        {substep.completed ? (
-                          <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
-                            <Check className="h-4 w-4 text-green-600" />
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              markSubstepComplete(
-                                brewSteps[currentStep].id,
-                                substep.id
-                              )
-                            }
-                            className="h-6 w-6 rounded-full border-2 border-gray-300 hover:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                            aria-label={`Mark substep ${substep.id} complete`}
-                          ></button>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p
-                          className={`${
-                            substep.completed
-                              ? "line-through text-gray-500"
-                              : ""
+                {getFilteredSteps()[currentStep] && (
+                  <>
+                    <div className="mb-4">
+                      <div className="flex items-center">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                            getFilteredSteps()[currentStep]?.category ===
+                            "cleaning"
+                              ? "bg-blue-100 text-blue-700"
+                              : getFilteredSteps()[currentStep]?.category ===
+                                "brewing"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-green-100 text-green-700"
                           }`}
                         >
-                          {substep.text}
-                        </p>
-
-                        {substep.hasTimer && !substep.completed && (
-                          <div className="mt-2">
-                            {activeTimer &&
-                            activeTimer.stepId === brewSteps[currentStep].id &&
-                            activeTimer.substepId === substep.id ? (
-                              <div className="flex items-center bg-amber-50 text-amber-800 p-2 rounded">
-                                <Clock className="mr-2 h-4 w-4" />
-                                Time remaining:{" "}
-                                {formatTime(activeTimer.timeLeft)}
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() =>
-                                  startTimer(
-                                    brewSteps[currentStep].id,
-                                    substep.id,
-                                    substep.timerDuration || 60
-                                  )
-                                }
-                                className="bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm hover:bg-amber-200 flex items-center focus:outline-none focus:ring-2 focus:ring-amber-500"
-                                aria-label={`Start timer for ${formatTime(
-                                  substep.timerDuration || 60
-                                )}`}
-                              >
-                                <Clock className="mr-1 h-4 w-4" />
-                                Start Timer (
-                                {formatTime(substep.timerDuration || 60)})
-                              </button>
-                            )}
-                          </div>
-                        )}
+                          {getFilteredSteps()[currentStep]?.category ===
+                          "cleaning" ? (
+                            <Droplets className="h-5 w-5" />
+                          ) : getFilteredSteps()[currentStep]?.category ===
+                            "brewing" ? (
+                            <ChefHat className="h-5 w-5" />
+                          ) : (
+                            <Hourglass className="h-5 w-5" />
+                          )}
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-bold">
+                            {getFilteredSteps()[currentStep]?.title}
+                          </h2>
+                          <p className="text-gray-600">
+                            {getFilteredSteps()[currentStep]?.description}
+                          </p>
+                        </div>
                       </div>
-                    </li>
-                  ))}
-                </ul>
+                    </div>
+
+                    {/* Image placeholder */}
+                    <div className="mb-6 bg-gray-200 rounded-lg h-64 flex items-center justify-center">
+                      <div className="text-gray-500 text-center p-4">
+                        <Home className="mx-auto mb-2 h-10 w-10" />
+                        <p>
+                          Image for step {currentStep + 1} will be displayed
+                          here
+                        </p>
+                      </div>
+                    </div>
+
+                    <h3 className="font-bold text-lg mb-3">Instructions:</h3>
+                    <ul className="space-y-4">
+                      {getFilteredSteps()[currentStep]?.substeps.map(
+                        (substep) => (
+                          <li
+                            key={substep.id}
+                            className="flex items-start"
+                            onClick={() => {
+                              if (!substep.completed) {
+                                markSubstepComplete(
+                                  getFilteredSteps()[currentStep].id,
+                                  substep.id
+                                );
+                              }
+                            }}
+                          >
+                            <div className="mr-3 mt-0.5">
+                              {substep.completed ? (
+                                <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
+                                  <Check className="h-4 w-4 text-green-600" />
+                                </div>
+                              ) : (
+                                <div
+                                  className="h-6 w-6 rounded-full border-2 border-gray-300 hover:border-amber-500 cursor-pointer"
+                                  aria-label={`Mark substep ${substep.id} complete`}
+                                ></div>
+                              )}
+                            </div>
+                            <div className="flex-1 cursor-pointer">
+                              <p
+                                className={`${
+                                  substep.completed
+                                    ? "line-through text-gray-500"
+                                    : ""
+                                }`}
+                              >
+                                {substep.text}
+                              </p>
+
+                              {substep.hasTimer && !substep.completed && (
+                                <div className="mt-2">
+                                  {activeTimer &&
+                                  activeTimer.stepId ===
+                                    getFilteredSteps()[currentStep].id &&
+                                  activeTimer.substepId === substep.id ? (
+                                    <div className="flex items-center bg-amber-50 text-amber-800 p-2 rounded">
+                                      <Clock className="mr-2 h-4 w-4" />
+                                      Time remaining:{" "}
+                                      {formatTime(activeTimer.timeLeft)}
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        startTimer(
+                                          getFilteredSteps()[currentStep].id,
+                                          substep.id,
+                                          substep.timerDuration || 60
+                                        );
+                                      }}
+                                      className="bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm hover:bg-amber-200 flex items-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                      aria-label={`Start timer for ${formatTime(
+                                        substep.timerDuration || 60
+                                      )}`}
+                                    >
+                                      <Clock className="mr-1 h-4 w-4" />
+                                      Start Timer (
+                                      {formatTime(substep.timerDuration || 60)})
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </>
+                )}
               </div>
 
               {/* Tips panel */}
