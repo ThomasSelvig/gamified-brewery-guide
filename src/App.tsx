@@ -811,7 +811,7 @@ const App: React.FC = () => {
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold flex items-center">
             <ChefHat className="mr-2" />
-            BrewMaster Quest
+            BrewMaster
           </h1>
 
           {!showRecipeForm && (
@@ -1868,7 +1868,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-4 mt-8">
         <div className="container mx-auto text-center text-sm">
-          <p>BrewMaster Quest - Learn brewing through gamified experience</p>
+          <p>BrewMaster - Learn brewing through play</p>
           <p className="mt-1 text-gray-400">
             Made with ❤️ for beer enthusiasts by Thomas Selvig
           </p>
