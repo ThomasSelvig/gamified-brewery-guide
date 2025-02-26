@@ -1399,7 +1399,7 @@ const App: React.FC = () => {
         ) : (
           <div className="flex flex-col md:flex-row gap-6">
             {/* Main content area */}
-            <div className="md:w-3/4 order-2 md:order-1">
+            <div className="md:w-3/4 order-2 md:order-1 max-w-3xl md:mx-auto">
               {/* Category filters */}
               <div className="bg-white rounded-lg shadow-md p-4 mb-4">
                 <div className="flex flex-wrap gap-2">
